@@ -1,5 +1,9 @@
 import React,{Component}from 'react'
-import { Form, Icon, Input, Button } from 'antd';
+import { Form, Icon, Input, Button,message } from 'antd'
+import {reLogin} from '../../api'
+import storageUtils from '../../utils/storageUtils.js'
+import memoryUtils from '../../utils/memoryUtils.js'
+import {Redirect} from 'react-router-dom'
 import logo from './images/logo.png'
 import './login.less'
 
@@ -14,11 +18,23 @@ const Item = Form.Item;
         // const username = form.getFieldValue('username');
         // const password = form.getFieldValue('password');
        // console.log(values,username,password);
-       this.props.form.validateFields((err, values) => {
+       this.props.form.validateFields(async(err, {username,password}) => {
         if (!err) {
             //校验成功
-            const {username,password} = values;
-          alert(`提交登陆请求, username=${username},password=${password}`);
+           // const {username,password} = values;
+          //alert(`提交登陆请求, username=${username},password=${password}`);
+          const result = await reLogin(username,password)
+          //登陆成功
+            if(result.status===0){
+                const user = result.data
+                //localStorage.setItem('user_key',JSON.stringify(user))
+               storageUtils.saveUser(user)
+               memoryUtils.user = user
+                this.props.history.replace('/')
+                message.success('登陆成功！')
+              }else{ //登陆失败
+                message.error(result.msg)
+              }     
         }else{
             //校验失败
             alert('无法提交登陆请求');
@@ -48,6 +64,15 @@ const Item = Form.Item;
                 }
            }
     render(){
+         //读取保存的user如果存在，直接跳转到管理界面
+        // const user = JSON.parse(localStorage.getItem('user_key')||'{}')
+        //const user = storageUtils.getUser();
+        const user = memoryUtils.user
+         if(user._id){
+             //this.props.replace('/login') //事件回调函数中进行路由跳转
+             return <Redirect to="/"/> //自动跳转到指定的路由路径
+         }
+
         const { getFieldDecorator} = this.props.form;
         return(
             <div className="login">
